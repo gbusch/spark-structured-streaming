@@ -44,7 +44,7 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
     // create expected output
     val expectedSchema = List(
       StructField("key", StringType, true),
-      StructField("max2", IntegerType, false)
+      StructField("max5", IntegerType, false)
     )
 
     val expectedData = Seq(
