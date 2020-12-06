@@ -2,9 +2,11 @@ import com.github.mrpowers.spark.fast.tests.DataFrameComparer
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.streaming.{LongOffset, MemoryStream}
 import org.apache.spark.sql.streaming.GroupStateTimeout
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{DoubleType, StringType, StructField, StructType}
 import org.scalatest.FunSuite
 import Max5.{EventState, SimpleEvent, StateUpdate, updateState}
+
+import scala.Double.NaN
 
 class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper with DataFrameComparer {
 
@@ -29,12 +31,12 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
 
     // insert test data
     val currentOffset = events.addData(List(
-      SimpleEvent("a", 1),
-      SimpleEvent("a", 2),
-      SimpleEvent("a", 1),
-      SimpleEvent("a", 5),
-      SimpleEvent("a", 1),
-      SimpleEvent("b", 1)
+      SimpleEvent("a", 1.0),
+      SimpleEvent("a", 2.0),
+      SimpleEvent("a", 1.0),
+      SimpleEvent("a", 5.0),
+      SimpleEvent("a", 1.0),
+      SimpleEvent("b", 1.0)
     ))
     streamingQuery.processAllAvailable()
     events.commit(currentOffset.asInstanceOf[LongOffset])
@@ -44,12 +46,12 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
     // create expected output
     val expectedSchema = List(
       StructField("key", StringType, true),
-      StructField("max5", IntegerType, false)
+      StructField("max5", DoubleType, false)
     )
 
     val expectedData = Seq(
-      Row("a", 5),
-      Row("b", -1)
+      Row("a", 5.0),
+      Row("b", NaN)
     )
 
     val expectedDF = spark createDataFrame(
