@@ -13,7 +13,7 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
   import spark.implicits._
   implicit val sqlCtx = spark.sqlContext
 
-  test("Test simple case") {
+  test("Integration test") {
     // input data as memory stream
     val events = MemoryStream[SimpleEvent]
     val sessions = events.toDS()
@@ -30,7 +30,7 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
       .start
 
     // insert test data
-    val currentOffset = events.addData(List(
+    val offset1 = events.addData(List(
       SimpleEvent("a", 1.0),
       SimpleEvent("a", 2.0),
       SimpleEvent("a", 1.0),
@@ -39,7 +39,29 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
       SimpleEvent("b", 1.0)
     ))
     streamingQuery.processAllAvailable()
-    events.commit(currentOffset.asInstanceOf[LongOffset])
+    events.commit(offset1.asInstanceOf[LongOffset])
+
+    // insert test data
+    val offset2 = events.addData(List(
+      SimpleEvent("a", 9.0)
+    ))
+    streamingQuery.processAllAvailable()
+    events.commit(offset2.asInstanceOf[LongOffset])
+
+    val offset3 = events.addData(List(
+      SimpleEvent("a", 1.0),
+      SimpleEvent("a", 1.0),
+      SimpleEvent("a", 1.0),
+      SimpleEvent("a", 1.0)
+    ))
+    streamingQuery.processAllAvailable()
+    events.commit(offset3.asInstanceOf[LongOffset])
+
+    val offset4 = events.addData(List(
+      SimpleEvent("a", 8.0)
+    ))
+    streamingQuery.processAllAvailable()
+    events.commit(offset4.asInstanceOf[LongOffset])
 
     val actualDF = spark.table("queryName")
 
@@ -51,6 +73,9 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
 
     val expectedData = Seq(
       Row("a", 5.0),
+      Row("a", 9.0),
+      Row("a", 9.0),
+      Row("a", 8.0),
       Row("b", NaN)
     )
 
@@ -61,5 +86,6 @@ class MoreComplicatedStreamingTest extends FunSuite with SparkSessionWrapper wit
 
     // compare actual and expected output
     assertSmallDataFrameEquality(actualDF.sort("key"), expectedDF)
+
   }
 }
